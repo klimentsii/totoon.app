@@ -31,6 +31,22 @@ export class App {
     return !output.trim() || output.startsWith('Error:');
   });
 
+  inputTokens = computed(() => {
+    const input = this.jsonInput();
+    if (!input.trim()) {
+      return 0;
+    }
+    return input.trim().split(/\s+/).filter(word => word.length > 0).length;
+  });
+
+  outputTokens = computed(() => {
+    const output = this.toonOutput();
+    if (!output.trim() || output.startsWith('Error:')) {
+      return 0;
+    }
+    return output.trim().split(/\s+/).filter(word => word.length > 0).length;
+  });
+
   onJsonChange(value: string): void {
     this.jsonInput.set(value);
   }
