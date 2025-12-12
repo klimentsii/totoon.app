@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
 })
 export class App {
   jsonInput = signal('');
+  isDragOver = signal(false);
 
   toonOutput = computed(() => {
     const jsonString = this.jsonInput();
@@ -52,6 +53,39 @@ export class App {
       return;
     }
 
+    this.processFile(file);
+    input.value = '';
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver.set(false);
+
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const file = files[0];
+    if (file.type === 'application/json' || file.name.endsWith('.json')) {
+      this.processFile(file);
+    }
+  }
+
+  private processFile(file: File): void {
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
@@ -60,8 +94,6 @@ export class App {
       }
     };
     reader.readAsText(file);
-
-    input.value = '';
   }
 
   private formatAndSetJson(jsonString: string): void {

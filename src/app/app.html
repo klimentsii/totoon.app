@@ -24,8 +24,12 @@
       <textarea
         id="json-input"
         class="textarea-input"
+        [class.drag-over]="isDragOver()"
         [value]="jsonInput()"
         (input)="onJsonChange($any($event.target).value)"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
         placeholder='Enter JSON, e.g.: {"name": "test", "value": 123}'
       ></textarea>
     </div>
