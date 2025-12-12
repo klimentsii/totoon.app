@@ -1,1 +1,72 @@
-<router-outlet></router-outlet>
+<div class="converter-container">
+  <div class="header">
+    <h1>JSON to Toon Converter</h1>
+  </div>
+
+  <div class="content">
+    <div class="input-section">
+      <div class="input-header">
+        <label for="json-input">JSON Input</label>
+        <div class="buttons">
+          <button type="button" class="btn btn-paste" (click)="onPaste()">Paste</button>
+          <label for="file-input" class="btn btn-load">
+            Load File
+            <input
+              type="file"
+              id="file-input"
+              accept=".json,application/json"
+              (change)="onFileSelected($event)"
+              style="display: none"
+            />
+          </label>
+        </div>
+      </div>
+      <textarea
+        id="json-input"
+        class="textarea-input"
+        [value]="jsonInput()"
+        (input)="onJsonChange($any($event.target).value)"
+        placeholder='Enter JSON, e.g.: {"name": "test", "value": 123}'
+      ></textarea>
+    </div>
+
+    <div class="output-section">
+      <div class="output-header">
+        <label for="toon-output">Toon Format Output</label>
+        <div class="buttons">
+          <button
+            type="button"
+            class="btn btn-copy"
+            [disabled]="isOutputEmpty()"
+            (click)="onCopy()"
+          >
+            Copy
+          </button>
+          <button
+            type="button"
+            class="btn btn-save"
+            [disabled]="isOutputEmpty()"
+            (click)="onSave()"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            class="btn btn-save-as"
+            [disabled]="isOutputEmpty()"
+            (click)="onSaveAs()"
+          >
+            Save As
+          </button>
+        </div>
+      </div>
+      <textarea
+        id="toon-output"
+        class="textarea-output"
+        [value]="toonOutput()"
+        readonly
+        placeholder="Conversion result will appear here..."
+      ></textarea>
+    </div>
+  </div>
+</div>
