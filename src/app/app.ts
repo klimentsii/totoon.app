@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 export class App {
   jsonInput = signal('');
   isDragOver = signal(false);
+  showCopiedNotification = signal(false);
 
   toonOutput = computed(() => {
     const jsonString = this.jsonInput();
@@ -31,6 +32,11 @@ export class App {
     return !output.trim() || output.startsWith('Error:');
   });
 
+  hasError = computed(() => {
+    const output = this.toonOutput();
+    return output.startsWith('Error:');
+  });
+
   inputTokens = computed(() => {
     const input = this.jsonInput();
     if (!input.trim()) {
@@ -48,6 +54,9 @@ export class App {
   });
 
   savedTokens = computed(() => {
+    if (this.hasError()) {
+      return 0;
+    }
     const input = this.inputTokens();
     const output = this.outputTokens();
     return input > 0 ? input - output : 0;
@@ -70,6 +79,9 @@ export class App {
   });
 
   savedBytes = computed(() => {
+    if (this.hasError()) {
+      return 0;
+    }
     const input = this.inputBytes();
     const output = this.outputBytes();
     return input > 0 ? input - output : 0;
@@ -158,6 +170,10 @@ export class App {
 
     try {
       await navigator.clipboard.writeText(text);
+      this.showCopiedNotification.set(true);
+      setTimeout(() => {
+        this.showCopiedNotification.set(false);
+      }, 2000);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
     }

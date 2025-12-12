@@ -83,4 +83,7 @@
       <span class="savings-value">{{ savedBytes() }}</span>
     </div>
   </div>
+  @if (showCopiedNotification()) {
+    <div class="notification">Copied!</div>
+  }
 </div>
