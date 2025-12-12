@@ -47,6 +47,34 @@ export class App {
     return output.trim().split(/\s+/).filter(word => word.length > 0).length;
   });
 
+  savedTokens = computed(() => {
+    const input = this.inputTokens();
+    const output = this.outputTokens();
+    return input > 0 ? input - output : 0;
+  });
+
+  inputBytes = computed(() => {
+    const input = this.jsonInput();
+    if (!input.trim()) {
+      return 0;
+    }
+    return new Blob([input]).size;
+  });
+
+  outputBytes = computed(() => {
+    const output = this.toonOutput();
+    if (!output.trim() || output.startsWith('Error:')) {
+      return 0;
+    }
+    return new Blob([output]).size;
+  });
+
+  savedBytes = computed(() => {
+    const input = this.inputBytes();
+    const output = this.outputBytes();
+    return input > 0 ? input - output : 0;
+  });
+
   onJsonChange(value: string): void {
     this.jsonInput.set(value);
   }

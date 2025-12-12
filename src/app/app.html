@@ -1,6 +1,6 @@
 <div class="converter-container">
   <div class="header">
-    <h1>JSON to Toon Converter</h1>
+    <h1>JSON to TOON Converter</h1>
   </div>
 
   <div class="content">
@@ -71,6 +71,16 @@
         readonly
         placeholder="Conversion result will appear here..."
       ></textarea>
+    </div>
+  </div>
+  <div class="savings-info">
+    <div class="savings-item">
+      <span class="savings-label">Tokens saved:</span>
+      <span class="savings-value">{{ savedTokens() }}</span>
+    </div>
+    <div class="savings-item">
+      <span class="savings-label">Bytes saved:</span>
+      <span class="savings-value">{{ savedBytes() }}</span>
     </div>
   </div>
 </div>
