@@ -10,10 +10,15 @@ import { CommonModule } from '@angular/common';
 })
 export class App {
   jsonInput = signal('');
+  originalJsonInput = signal('');
+  toonManualInput = signal('');
   isDragOver = signal(false);
   showCopiedNotification = signal(false);
 
   toonOutput = computed(() => {
+    if (this.toonManualInput().trim()) {
+      return this.toonManualInput();
+    }
     const jsonString = this.jsonInput();
     if (!jsonString.trim()) {
       return '';
@@ -38,11 +43,12 @@ export class App {
   });
 
   inputTokens = computed(() => {
-    const input = this.jsonInput();
-    if (!input.trim()) {
+    const input = this.originalJsonInput() || this.jsonInput();
+    if (!input.trim() || input.startsWith('Error:')) {
       return 0;
     }
-    return input.trim().split(/\s+/).filter(word => word.length > 0).length;
+    const tokens = input.trim().split(/\s+/).filter(word => word.length > 0);
+    return tokens.length;
   });
 
   outputTokens = computed(() => {
@@ -50,7 +56,8 @@ export class App {
     if (!output.trim() || output.startsWith('Error:')) {
       return 0;
     }
-    return output.trim().split(/\s+/).filter(word => word.length > 0).length;
+    const tokens = output.trim().split(/\s+/).filter(word => word.length > 0);
+    return tokens.length;
   });
 
   savedTokens = computed(() => {
@@ -59,12 +66,13 @@ export class App {
     }
     const input = this.inputTokens();
     const output = this.outputTokens();
-    return input > 0 ? input - output : 0;
+    const saved = input - output;
+    return saved > 0 ? saved : 0;
   });
 
   inputBytes = computed(() => {
-    const input = this.jsonInput();
-    if (!input.trim()) {
+    const input = this.originalJsonInput() || this.jsonInput();
+    if (!input.trim() || input.startsWith('Error:')) {
       return 0;
     }
     return new Blob([input]).size;
@@ -84,11 +92,36 @@ export class App {
     }
     const input = this.inputBytes();
     const output = this.outputBytes();
-    return input > 0 ? input - output : 0;
+    const saved = input - output;
+    return saved > 0 ? saved : 0;
   });
 
   onJsonChange(value: string): void {
     this.jsonInput.set(value);
+    if (!value.startsWith('Error:')) {
+      this.originalJsonInput.set(value);
+    }
+    this.toonManualInput.set('');
+  }
+
+  onToonChange(value: string): void {
+    this.toonManualInput.set(value);
+    if (!value.trim()) {
+      this.jsonInput.set('');
+      this.toonManualInput.set('');
+      this.originalJsonInput.set('');
+      return;
+    }
+
+    try {
+      const jsonObject = this.toonToJson(value);
+      const formatted = JSON.stringify(jsonObject, null, 2);
+      if (!formatted.startsWith('Error:')) {
+        this.jsonInput.set(formatted);
+      }
+    } catch (error) {
+      this.jsonInput.set(`Error: ${error instanceof Error ? error.message : 'Invalid TOON format'}`);
+    }
   }
 
   async onPaste(): Promise<void> {
@@ -157,8 +190,12 @@ export class App {
       const jsonObject = JSON.parse(jsonString);
       const formatted = JSON.stringify(jsonObject, null, 2);
       this.jsonInput.set(formatted);
+      this.originalJsonInput.set(formatted);
+      this.toonManualInput.set('');
     } catch (error) {
       this.jsonInput.set(jsonString);
+      this.originalJsonInput.set(jsonString);
+      this.toonManualInput.set('');
     }
   }
 
@@ -345,5 +382,139 @@ export class App {
       return String(value);
     }
     return String(value);
+  }
+
+  private toonToJson(toonString: string): any {
+    const lines = toonString.trim().split('\n').filter(line => line.trim());
+    if (lines.length === 0) {
+      return {};
+    }
+
+    const firstLine = lines[0].trim();
+
+    if (firstLine === '[]:') {
+      return [];
+    }
+
+    if (firstLine === '{}:') {
+      return {};
+    }
+
+    if (firstLine.match(/^\[\d+\]\{.*\}:$/)) {
+      return this.parseToonArray(lines);
+    }
+
+    return this.parseToonObject(lines);
+  }
+
+  private parseToonArray(lines: string[]): any[] {
+    if (lines.length === 0) {
+      return [];
+    }
+
+    const header = lines[0].trim();
+    const headerMatch = header.match(/^\[(\d+)\]\{(.+)\}:$/);
+    if (!headerMatch) {
+      throw new Error('Invalid array header format');
+    }
+
+    const count = parseInt(headerMatch[1], 10);
+    const keys = headerMatch[2].split(',').map(k => k.trim());
+
+    const result: any[] = [];
+    for (let i = 1; i < lines.length && result.length < count; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const item: any = {};
+      keys.forEach((key, index) => {
+        item[key] = this.parseToonValue(values[index] || '');
+      });
+      result.push(item);
+    }
+
+    return result;
+  }
+
+  private parseToonObject(lines: string[]): any {
+    const result: any = {};
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      if (!line) {
+        i++;
+        continue;
+      }
+
+      if (line.endsWith(':')) {
+        const key = line.slice(0, -1).trim();
+        
+        if (i + 1 < lines.length) {
+          const nextLine = lines[i + 1].trim();
+          
+          if (nextLine.match(/^\[\d+\]\{.*\}:$/)) {
+            const arrayLines = [nextLine];
+            let j = i + 2;
+            while (j < lines.length && !lines[j].trim().endsWith(':') && !lines[j].trim().match(/^[^:]+:\s/)) {
+              arrayLines.push(lines[j]);
+              j++;
+            }
+            result[key] = this.parseToonArray(arrayLines);
+            i = j;
+            continue;
+          }
+
+          if (nextLine.startsWith('  ')) {
+            const nestedLines: string[] = [];
+            let j = i + 1;
+            while (j < lines.length && lines[j].startsWith('  ')) {
+              nestedLines.push(lines[j].substring(2));
+              j++;
+            }
+            result[key] = this.parseToonObject(nestedLines);
+            i = j;
+            continue;
+          }
+        }
+
+        if (i + 1 < lines.length) {
+          const value = lines[i + 1].trim();
+          result[key] = this.parseToonValue(value);
+          i += 2;
+        } else {
+          result[key] = null;
+          i++;
+        }
+      } else {
+        const colonIndex = line.indexOf(':');
+        if (colonIndex > 0) {
+          const key = line.substring(0, colonIndex).trim();
+          const value = line.substring(colonIndex + 1).trim();
+          result[key] = this.parseToonValue(value);
+        }
+        i++;
+      }
+    }
+
+    return result;
+  }
+
+  private parseToonValue(value: string): any {
+    if (value === 'null') {
+      return null;
+    }
+    if (value === 'true') {
+      return true;
+    }
+    if (value === 'false') {
+      return false;
+    }
+    if (value === '') {
+      return '';
+    }
+    const numValue = Number(value);
+    if (!isNaN(numValue) && value.trim() !== '') {
+      return numValue;
+    }
+    return value;
   }
 }

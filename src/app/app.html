@@ -68,7 +68,7 @@
         id="toon-output"
         class="textarea-output"
         [value]="toonOutput()"
-        readonly
+        (input)="onToonChange($any($event.target).value)"
         placeholder="Conversion result will appear here..."
       ></textarea>
     </div>
