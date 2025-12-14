@@ -1,6 +1,19 @@
 <div class="converter-container">
   <div class="header">
     <h1>JSON to TOON Converter</h1>
+    <div class="model-selector">
+      <label for="model-select">Tokenizer Model:</label>
+      <select
+        id="model-select"
+        class="model-select"
+        [value]="selectedModel()"
+        (change)="onModelChange($any($event.target).value)"
+      >
+        @for (model of models; track model.value) {
+          <option [value]="model.value">{{ model.label }}</option>
+        }
+      </select>
+    </div>
   </div>
 
   <div class="content">

@@ -1,6 +1,8 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+
+type TokenizerModel = 'openai' | 'anthropic' | 'google' | 'xai' | 'llama';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +16,15 @@ export class App {
   toonManualInput = signal('');
   isDragOver = signal(false);
   showCopiedNotification = signal(false);
+  selectedModel = signal<TokenizerModel>('openai');
+  
+  models = [
+    { value: 'openai', label: 'OpenAI (GPT-4/GPT-3.5)' },
+    { value: 'anthropic', label: 'Anthropic (Claude)' },
+    { value: 'google', label: 'Google (Gemini)' },
+    { value: 'xai', label: 'xAI (Grok-3/4)' },
+    { value: 'llama', label: 'Llama (Meta)' },
+  ];
 
   toonOutput = computed(() => {
     if (this.toonManualInput().trim()) {
@@ -42,23 +53,215 @@ export class App {
     return output.startsWith('Error:');
   });
 
-  inputTokens = computed(() => {
-    const input = this.originalJsonInput() || this.jsonInput();
-    if (!input.trim() || input.startsWith('Error:')) {
-      return 0;
-    }
-    const tokens = input.trim().split(/\s+/).filter(word => word.length > 0);
-    return tokens.length;
-  });
+  private openaiTokenizer: any = null;
+  private anthropicTokenizer: any = null;
 
-  outputTokens = computed(() => {
-    const output = this.toonOutput();
-    if (!output.trim() || output.startsWith('Error:')) {
+  private openaiTokenizerLoading = false;
+  private anthropicTokenizerLoading = false;
+
+  private async initializeOpenAITokenizer(): Promise<void> {
+    if (this.openaiTokenizer) return;
+    if (this.openaiTokenizerLoading) return;
+    
+    this.openaiTokenizerLoading = true;
+    try {
+      const modulePath = 'js-tiktoken' + '/lite';
+      const dynamicImport = new Function('specifier', 'return import(specifier)');
+      const tiktokenModule = await dynamicImport(modulePath).catch(() => null);
+      if (!tiktokenModule || !tiktokenModule.Tiktoken) {
+        throw new Error('js-tiktoken module not found');
+      }
+      const { Tiktoken } = tiktokenModule;
+      const res = await fetch('https://tiktoken.pages.dev/js/cl100k_base.json');
+      if (!res.ok) {
+        throw new Error(`Failed to fetch cl100k_base: ${res.status}`);
+      }
+      const cl100k_base = await res.json();
+      this.openaiTokenizer = new Tiktoken(cl100k_base);
+    } catch (error) {
+      this.openaiTokenizer = null;
+    } finally {
+      this.openaiTokenizerLoading = false;
+    }
+  }
+
+  private async initializeAnthropicTokenizer(): Promise<void> {
+    if (this.anthropicTokenizer) return;
+    if (this.anthropicTokenizerLoading) return;
+    
+    this.anthropicTokenizerLoading = true;
+    try {
+      const modulePath = '@anthropic-ai' + '/tokenizer';
+      const dynamicImport = new Function('specifier', 'return import(specifier)');
+      const anthropicModule = await dynamicImport(modulePath).catch(() => null);
+      if (!anthropicModule || !anthropicModule.countTokens) {
+        throw new Error('@anthropic-ai/tokenizer module not found');
+      }
+      const { countTokens } = anthropicModule;
+      this.anthropicTokenizer = { countTokens };
+    } catch (error) {
+      this.anthropicTokenizer = null;
+    } finally {
+      this.anthropicTokenizerLoading = false;
+    }
+  }
+
+  private async countTokens(text: string): Promise<number> {
+    if (!text || !text.trim()) {
       return 0;
     }
-    const tokens = output.trim().split(/\s+/).filter(word => word.length > 0);
-    return tokens.length;
-  });
+
+    const trimmed = text.trim();
+    const model = this.selectedModel();
+
+    try {
+      switch (model) {
+        case 'openai':
+          await this.initializeOpenAITokenizer();
+          if (this.openaiTokenizer) {
+            try {
+              if (typeof this.openaiTokenizer.encode === 'function') {
+                const encoded = this.openaiTokenizer.encode(trimmed);
+                if (Array.isArray(encoded)) {
+                  return encoded.length;
+                }
+              }
+              return Math.ceil(trimmed.length / 4);
+            } catch (error) {
+              return Math.ceil(trimmed.length / 4);
+            }
+          }
+          return Math.ceil(trimmed.length / 4);
+
+        case 'anthropic':
+          await this.initializeAnthropicTokenizer();
+          if (this.anthropicTokenizer && typeof this.anthropicTokenizer.countTokens === 'function') {
+            try {
+              const count = this.anthropicTokenizer.countTokens(trimmed);
+              return typeof count === 'number' && !isNaN(count) && count >= 0 
+                ? count 
+                : Math.ceil(trimmed.length / 4);
+            } catch (error) {
+              return Math.ceil(trimmed.length / 4);
+            }
+          }
+          return Math.ceil(trimmed.length / 4);
+
+        case 'google':
+        case 'xai':
+        case 'llama':
+          return Math.ceil(trimmed.length / 4);
+
+        default:
+          return Math.ceil(trimmed.length / 4);
+      }
+    } catch (error) {
+      return Math.ceil(trimmed.length / 4);
+    }
+  }
+
+  private tokenCountCache = new Map<string, number>();
+  private lastModel: TokenizerModel = 'openai';
+  private updateInProgress = false;
+
+  private getCacheKey(text: string, model: TokenizerModel): string {
+    return `${model}:${text.substring(0, 100)}:${text.length}`;
+  }
+
+  inputTokens = signal(0);
+  outputTokens = signal(0);
+
+  constructor() {
+    // Effect для отслеживания изменений модели и пересчета токенов
+    effect(() => {
+      const model = this.selectedModel();
+      const input = this.originalJsonInput() || this.jsonInput();
+      const output = this.toonOutput();
+      
+      // При изменении модели очищаем кеш и принудительно обновляем токены
+      if (model !== this.lastModel) {
+        this.tokenCountCache.clear();
+        this.lastModel = model;
+        this.updateInProgress = false;
+        // Принудительно обновляем токены для новой модели
+        this.updateTokenCounts(input, output, model).catch(() => {
+          // Silent fail - fallback values are set
+        });
+      } else if (!this.updateInProgress) {
+        // Обновляем токены при изменении input/output
+        this.updateTokenCounts(input, output, model).catch(() => {
+          // Silent fail - fallback values are set
+        });
+      }
+    });
+  }
+
+  private async updateTokenCounts(input: string, output: string, model: TokenizerModel): Promise<void> {
+    if (this.updateInProgress) return;
+    this.updateInProgress = true;
+
+    try {
+      if (!input || !input.trim() || input.startsWith('Error:')) {
+        this.inputTokens.set(0);
+      } else {
+        const cacheKey = this.getCacheKey(input, model);
+        if (this.tokenCountCache.has(cacheKey)) {
+          this.inputTokens.set(this.tokenCountCache.get(cacheKey)!);
+        } else {
+          try {
+            const count = await this.countTokens(input);
+            if (typeof count === 'number' && !isNaN(count) && count >= 0) {
+              this.tokenCountCache.set(cacheKey, count);
+              this.inputTokens.set(count);
+            } else {
+              const fallback = Math.ceil(input.trim().length / 4);
+              this.inputTokens.set(fallback);
+            }
+          } catch (error) {
+            const fallback = Math.ceil((input || '').trim().length / 4);
+            this.inputTokens.set(fallback);
+          }
+        }
+      }
+
+      if (!output || !output.trim() || output.startsWith('Error:')) {
+        this.outputTokens.set(0);
+      } else {
+        const cacheKey = this.getCacheKey(output, model);
+        if (this.tokenCountCache.has(cacheKey)) {
+          this.outputTokens.set(this.tokenCountCache.get(cacheKey)!);
+        } else {
+          try {
+            const count = await this.countTokens(output);
+            if (typeof count === 'number' && !isNaN(count) && count >= 0) {
+              this.tokenCountCache.set(cacheKey, count);
+              this.outputTokens.set(count);
+            } else {
+              const fallback = Math.ceil(output.trim().length / 4);
+              this.outputTokens.set(fallback);
+            }
+          } catch (error) {
+            const fallback = Math.ceil((output || '').trim().length / 4);
+            this.outputTokens.set(fallback);
+          }
+        }
+      }
+    } catch (error) {
+      // Silent fail - already using fallback values
+    } finally {
+      this.updateInProgress = false;
+    }
+  }
+
+  onModelChange(model: TokenizerModel): void {
+    try {
+      // Устанавливаем новую модель - это вызовет effect() в конструкторе
+      this.selectedModel.set(model);
+      // effect() автоматически обновит токены при изменении selectedModel
+    } catch (error) {
+      // Silent fail
+    }
+  }
 
   savedTokens = computed(() => {
     if (this.hasError()) {

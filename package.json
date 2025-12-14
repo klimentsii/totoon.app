@@ -31,7 +31,9 @@
     "@angular/platform-server": "^20.3.0",
     "@angular/router": "^20.3.0",
     "@angular/ssr": "^20.3.2",
+    "@anthropic-ai/tokenizer": "^1.0.0",
     "express": "^5.1.0",
+    "js-tiktoken": "^1.0.12",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
