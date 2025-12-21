@@ -172,25 +172,19 @@ export class App {
   outputTokens = signal(0);
 
   constructor() {
-    // Effect для отслеживания изменений модели и пересчета токенов
     effect(() => {
       const model = this.selectedModel();
       const input = this.originalJsonInput() || this.jsonInput();
       const output = this.toonOutput();
       
-      // При изменении модели очищаем кеш и принудительно обновляем токены
       if (model !== this.lastModel) {
         this.tokenCountCache.clear();
         this.lastModel = model;
         this.updateInProgress = false;
-        // Принудительно обновляем токены для новой модели
         this.updateTokenCounts(input, output, model).catch(() => {
-          // Silent fail - fallback values are set
         });
       } else if (!this.updateInProgress) {
-        // Обновляем токены при изменении input/output
         this.updateTokenCounts(input, output, model).catch(() => {
-          // Silent fail - fallback values are set
         });
       }
     });
@@ -247,7 +241,6 @@ export class App {
         }
       }
     } catch (error) {
-      // Silent fail - already using fallback values
     } finally {
       this.updateInProgress = false;
     }
@@ -255,11 +248,8 @@ export class App {
 
   onModelChange(model: TokenizerModel): void {
     try {
-      // Устанавливаем новую модель - это вызовет effect() в конструкторе
       this.selectedModel.set(model);
-      // effect() автоматически обновит токены при изменении selectedModel
     } catch (error) {
-      // Silent fail
     }
   }
 
@@ -347,6 +337,24 @@ export class App {
 
     this.processFile(file);
     input.value = '';
+  }
+
+  onExample(): void {
+    const exampleJson = {
+      name: "John Doe",
+      age: 30,
+      city: "New York",
+      active: true,
+      tags: ["developer", "angular"],
+      address: {
+        street: "123 Main St",
+        zip: "10001"
+      }
+    };
+    const formatted = JSON.stringify(exampleJson, null, 2);
+    this.jsonInput.set(formatted);
+    this.originalJsonInput.set(formatted);
+    this.toonManualInput.set('');
   }
 
   onDragOver(event: DragEvent): void {
