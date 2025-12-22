@@ -2,17 +2,44 @@
   <div class="header">
     <h1>JSON to TOON Converter</h1>
     <div class="model-selector">
-      <label for="model-select">Tokenizer Model:</label>
-      <select
-        id="model-select"
-        class="model-select"
-        [value]="selectedModel()"
-        (change)="onModelChange($any($event.target).value)"
-      >
-        @for (model of models; track model.value) {
-          <option [value]="model.value">{{ model.label }}</option>
+      <label>Tokenizer Model:</label>
+      <div class="custom-dropdown">
+        <button
+          type="button"
+          class="dropdown-button"
+          (click)="toggleDropdown()"
+          [class.open]="isDropdownOpen()"
+        >
+          <span>{{ getSelectedModelLabel() }}</span>
+          <svg
+            class="dropdown-arrow"
+            [class.open]="isDropdownOpen()"
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M6 9L1 4h10z" fill="#e0e0e0" />
+          </svg>
+        </button>
+        @if (isDropdownOpen()) {
+          <div class="dropdown-menu">
+            @for (model of models; track model.value) {
+              <button
+                type="button"
+                class="dropdown-item"
+                [class.disabled]="model.disabled"
+                [class.selected]="selectedModel() === model.value"
+                [disabled]="model.disabled"
+                (click)="selectModel(model.value)"
+              >
+                {{ model.label }}
+              </button>
+            }
+          </div>
         }
-      </select>
+      </div>
     </div>
   </div>
 

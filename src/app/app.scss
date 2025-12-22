@@ -35,7 +35,13 @@
     font-weight: 500;
   }
 
-  .model-select {
+  .custom-dropdown {
+    position: relative;
+    width: 250px;
+  }
+
+  .dropdown-button {
+    width: 100%;
     padding: 0.5rem 1rem;
     background-color: #2a2a2a;
     border: 1px solid #444;
@@ -46,22 +52,84 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
-    min-width: 250px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
 
     &:hover {
       background-color: #222222;
       border-color: #555;
     }
 
-    &:focus {
-      outline: none;
+    &.open {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
       border-color: #4a9eff;
       background-color: #222222;
     }
 
-    option {
-      background-color: #2a2a2a;
-      color: #e0e0e0;
+    span {
+      flex: 1;
+    }
+  }
+
+  .dropdown-arrow {
+    width: 12px;
+    height: 12px;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+
+    &.open {
+      transform: rotate(180deg);
+    }
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-top: none;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .dropdown-item {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: transparent;
+    border: none;
+    color: #e0e0e0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: background-color 0.2s ease;
+    box-sizing: border-box;
+
+    &:hover:not(.disabled) {
+      background-color: #333;
+    }
+
+    &.selected {
+      background-color: #1a1a1a;
+      color: #4a9eff;
+    }
+
+    &.disabled {
+      color: #666;
+      cursor: not-allowed;
+      opacity: 0.6;
     }
   }
 }

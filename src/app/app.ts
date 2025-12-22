@@ -1,4 +1,4 @@
-import { Component, signal, computed, effect } from '@angular/core';
+import { Component, signal, computed, effect, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -17,13 +17,14 @@ export class App {
   isDragOver = signal(false);
   showCopiedNotification = signal(false);
   selectedModel = signal<TokenizerModel>('openai');
+  isDropdownOpen = signal(false);
   
   models = [
-    { value: 'openai', label: 'OpenAI (GPT-4/GPT-3.5)' },
-    { value: 'anthropic', label: 'Anthropic (Claude)' },
-    { value: 'google', label: 'Google (Gemini)' },
-    { value: 'xai', label: 'xAI (Grok-3/4)' },
-    { value: 'llama', label: 'Llama (Meta)' },
+    { value: 'openai', label: 'OpenAI ChatGPT', disabled: false },
+    { value: 'anthropic', label: 'Anthropic (Claude)', disabled: true },
+    { value: 'google', label: 'Google (Gemini)', disabled: true },
+    { value: 'xai', label: 'xAI (Grok-3/4)', disabled: true },
+    { value: 'llama', label: 'Llama (Meta)', disabled: true },
   ];
 
   toonOutput = computed(() => {
@@ -248,8 +249,37 @@ export class App {
 
   onModelChange(model: TokenizerModel): void {
     try {
-      this.selectedModel.set(model);
+      const selectedModelConfig = this.models.find(m => m.value === model);
+      if (selectedModelConfig && !selectedModelConfig.disabled) {
+        this.selectedModel.set(model);
+      }
     } catch (error) {
+    }
+  }
+
+  toggleDropdown(): void {
+    this.isDropdownOpen.set(!this.isDropdownOpen());
+  }
+
+  selectModel(model: string): void {
+    const modelValue = model as TokenizerModel;
+    const selectedModelConfig = this.models.find(m => m.value === modelValue);
+    if (selectedModelConfig && !selectedModelConfig.disabled) {
+      this.selectedModel.set(modelValue);
+      this.isDropdownOpen.set(false);
+    }
+  }
+
+  getSelectedModelLabel(): string {
+    const selected = this.models.find(m => m.value === this.selectedModel());
+    return selected ? selected.label : 'OpenAI ChatGPT';
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.custom-dropdown')) {
+      this.isDropdownOpen.set(false);
     }
   }
 
