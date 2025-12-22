@@ -123,6 +123,14 @@
       <span class="savings-label">Bytes saved:</span>
       <span class="savings-value">{{ savedBytes() }}</span>
     </div>
+    <div class="savings-item">
+      <span class="savings-label">Tokens saved %:</span>
+      <span class="savings-value">{{ savedTokensPercent() }}%</span>
+    </div>
+    <div class="savings-item">
+      <span class="savings-label">Money saved:</span>
+      <span class="savings-value">${{ savedDollars().toFixed(2) }}</span>
+    </div>
   </div>
   @if (showCopiedNotification()) {
     <div class="notification">Copied!</div>

@@ -319,6 +319,27 @@ export class App {
     return saved > 0 ? saved : 0;
   });
 
+  savedTokensPercent = computed(() => {
+    if (this.hasError()) {
+      return 0;
+    }
+    const input = this.inputTokens();
+    if (input === 0) {
+      return 0;
+    }
+    const saved = this.savedTokens();
+    return Math.round((saved / input) * 100);
+  });
+
+  savedDollars = computed(() => {
+    if (this.hasError()) {
+      return 0;
+    }
+    const pricePerToken = 0.00006;
+    const saved = this.savedTokens();
+    return saved * pricePerToken;
+  });
+
   onJsonChange(value: string): void {
     this.jsonInput.set(value);
     if (!value.startsWith('Error:')) {
