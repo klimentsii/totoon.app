@@ -3,7 +3,6 @@
   padding: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -28,6 +27,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
+  margin-bottom: 1rem;
 
   label {
     color: #b0b0b0;
@@ -137,7 +137,7 @@
 .content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 1rem;
   flex: 1;
 
   @media (max-width: 768px) {
@@ -293,6 +293,99 @@ label.btn {
 .textarea-output {
   background-color: #1a1a1a;
   border-color: #2a2a2a;
+}
+
+.settings-dropdown {
+  position: relative;
+
+  .btn-settings {
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: auto;
+    width: auto;
+
+    svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    &.active {
+      background-color: #4a9eff;
+      border-color: #4a9eff;
+      color: #ffffff;
+    }
+  }
+
+  .settings-panel {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
+    padding: 1rem;
+    background-color: #121212;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 300px;
+
+    h3 {
+      color: #e0e0e0;
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 1rem 0;
+    }
+
+    .settings-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .setting-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      label {
+        color: #b0b0b0;
+        font-size: 0.875rem;
+        font-weight: 500;
+        min-width: 120px;
+      }
+
+      .setting-options {
+        display: flex;
+        gap: 0.5rem;
+      }
+    }
+
+    .setting-btn {
+      padding: 0.375rem 0.75rem;
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      min-width: 60px;
+
+      &:hover {
+        background-color: #222222;
+        border-color: #555;
+      }
+
+      &.active {
+        background-color: #4a9eff;
+        border-color: #4a9eff;
+        color: #ffffff;
+      }
+    }
+  }
 }
 
 .savings-info {

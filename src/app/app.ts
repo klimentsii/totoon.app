@@ -18,6 +18,11 @@ export class App {
   showCopiedNotification = signal(false);
   selectedModel = signal<TokenizerModel>('openai');
   isDropdownOpen = signal(false);
+  isSettingsOpen = signal(false);
+  
+  toonIndent = signal<'none' | '2' | '4'>('2');
+  toonDelimiter = signal<'comma' | 'tab'>('comma');
+  toonLengthMarkers = signal<boolean>(true);
   
   models = [
     { value: 'openai', label: 'OpenAI ChatGPT', disabled: false },
@@ -36,6 +41,10 @@ export class App {
       return '';
     }
 
+    this.toonIndent();
+    this.toonDelimiter();
+    this.toonLengthMarkers();
+
     try {
       const jsonObject = JSON.parse(jsonString);
       return this.jsonToToon(jsonObject);
@@ -43,6 +52,16 @@ export class App {
       return `Error: ${error instanceof Error ? error.message : 'Invalid JSON format'}`;
     }
   });
+
+  private getIndentString(): string {
+    const indent = this.toonIndent();
+    if (indent === 'none') return '';
+    return indent === '2' ? '  ' : '    ';
+  }
+
+  private getDelimiter(): string {
+    return this.toonDelimiter() === 'comma' ? ',' : '\t';
+  }
 
   isOutputEmpty = computed(() => {
     const output = this.toonOutput();
@@ -283,6 +302,13 @@ export class App {
     if (!target.closest('.custom-dropdown')) {
       this.isDropdownOpen.set(false);
     }
+    if (!target.closest('.settings-dropdown')) {
+      this.isSettingsOpen.set(false);
+    }
+  }
+
+  toggleSettings(): void {
+    this.isSettingsOpen.set(!this.isSettingsOpen());
   }
 
   savedTokens = computed(() => {
@@ -566,9 +592,11 @@ export class App {
         );
 
         if (allSameStructure && keys.length > 0) {
-          const header = `[${obj.length}]{${keys.join(',')}}:`;
+          const delimiter = this.getDelimiter();
+          const lengthPrefix = this.toonLengthMarkers() ? `[${obj.length}]` : '';
+          const header = `${lengthPrefix}{${keys.join(delimiter)}}:`;
           const rows = obj.map((item) => {
-            return keys.map((key) => this.formatToonValue(item[key])).join(',');
+            return keys.map((key) => this.formatToonValue(item[key])).join(delimiter);
           });
           return `${header}\n${rows.join('\n')}`;
         }
@@ -602,10 +630,12 @@ export class App {
             );
 
             if (allSameStructure && arrayKeys.length > 0) {
-              const header = `${key}[${value.length}]{${arrayKeys.join(',')}}:`;
+              const delimiter = this.getDelimiter();
+              const lengthPrefix = this.toonLengthMarkers() ? `[${value.length}]` : '';
+              const header = `${key}${lengthPrefix}{${arrayKeys.join(delimiter)}}:`;
               lines.push(header);
               const rows = value.map((item) => {
-                return arrayKeys.map((k) => this.formatToonValue(item[k])).join(',');
+                return arrayKeys.map((k) => this.formatToonValue(item[k])).join(delimiter);
               });
               lines.push(...rows);
               return;
@@ -615,10 +645,11 @@ export class App {
 
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
           const nested = this.jsonToToon(value);
+          const indentStr = this.getIndentString();
           if (nested.includes('\n') || nested.includes('[') || nested.includes('{')) {
             lines.push(`${key}:`);
             nested.split('\n').forEach((line) => {
-              lines.push(`  ${line}`);
+              lines.push(`${indentStr}${line}`);
             });
           } else {
             lines.push(`${key}: ${nested}`);
