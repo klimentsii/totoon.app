@@ -175,7 +175,7 @@ export class App {
   constructor() {
     effect(() => {
       const model = this.selectedModel();
-      const input = this.originalJsonInput() || this.jsonInput();
+      const input = this.jsonInput();
       const output = this.toonOutput();
       
       if (model !== this.lastModel) {
@@ -184,21 +184,35 @@ export class App {
         this.updateInProgress = false;
         this.updateTokenCounts(input, output, model).catch(() => {
         });
-      } else if (!this.updateInProgress) {
-        this.updateTokenCounts(input, output, model).catch(() => {
-        });
+      } else {
+        if (!this.updateInProgress) {
+          this.updateTokenCounts(input, output, model).catch(() => {
+          });
+        }
       }
     });
   }
 
   private async updateTokenCounts(input: string, output: string, model: TokenizerModel): Promise<void> {
+    if (!input || !input.trim() || input.startsWith('Error:')) {
+      this.inputTokens.set(0);
+    } else {
+      const fallback = Math.ceil(input.trim().length / 4);
+      this.inputTokens.set(fallback);
+    }
+
+    if (!output || !output.trim() || output.startsWith('Error:')) {
+      this.outputTokens.set(0);
+    } else {
+      const fallback = Math.ceil(output.trim().length / 4);
+      this.outputTokens.set(fallback);
+    }
+
     if (this.updateInProgress) return;
     this.updateInProgress = true;
 
     try {
-      if (!input || !input.trim() || input.startsWith('Error:')) {
-        this.inputTokens.set(0);
-      } else {
+      if (input && input.trim() && !input.startsWith('Error:')) {
         const cacheKey = this.getCacheKey(input, model);
         if (this.tokenCountCache.has(cacheKey)) {
           this.inputTokens.set(this.tokenCountCache.get(cacheKey)!);
@@ -208,20 +222,13 @@ export class App {
             if (typeof count === 'number' && !isNaN(count) && count >= 0) {
               this.tokenCountCache.set(cacheKey, count);
               this.inputTokens.set(count);
-            } else {
-              const fallback = Math.ceil(input.trim().length / 4);
-              this.inputTokens.set(fallback);
             }
           } catch (error) {
-            const fallback = Math.ceil((input || '').trim().length / 4);
-            this.inputTokens.set(fallback);
           }
         }
       }
 
-      if (!output || !output.trim() || output.startsWith('Error:')) {
-        this.outputTokens.set(0);
-      } else {
+      if (output && output.trim() && !output.startsWith('Error:')) {
         const cacheKey = this.getCacheKey(output, model);
         if (this.tokenCountCache.has(cacheKey)) {
           this.outputTokens.set(this.tokenCountCache.get(cacheKey)!);
@@ -231,13 +238,8 @@ export class App {
             if (typeof count === 'number' && !isNaN(count) && count >= 0) {
               this.tokenCountCache.set(cacheKey, count);
               this.outputTokens.set(count);
-            } else {
-              const fallback = Math.ceil(output.trim().length / 4);
-              this.outputTokens.set(fallback);
             }
           } catch (error) {
-            const fallback = Math.ceil((output || '').trim().length / 4);
-            this.outputTokens.set(fallback);
           }
         }
       }
@@ -294,7 +296,7 @@ export class App {
   });
 
   inputBytes = computed(() => {
-    const input = this.originalJsonInput() || this.jsonInput();
+    const input = this.jsonInput();
     if (!input.trim() || input.startsWith('Error:')) {
       return 0;
     }
