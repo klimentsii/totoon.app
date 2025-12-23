@@ -368,6 +368,28 @@ export class App {
     return saved * pricePerToken;
   });
 
+  formatDollars(value: number): string {
+    if (value === 0) {
+      return '0.00';
+    }
+    if (value >= 0.01) {
+      return value.toFixed(2);
+    }
+    if (value >= 0.001) {
+      return value.toFixed(3);
+    }
+    if (value >= 0.0001) {
+      return value.toFixed(4);
+    }
+    if (value >= 0.00001) {
+      return value.toFixed(5);
+    }
+    if (value >= 0.000001) {
+      return value.toFixed(6);
+    }
+    return value.toFixed(7);
+  }
+
   onJsonChange(value: string): void {
     this.jsonInput.set(value);
     if (!value.startsWith('Error:')) {

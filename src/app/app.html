@@ -184,10 +184,6 @@
   </div>
   <div class="savings-info">
     <div class="savings-item">
-      <span class="savings-label">Model:</span>
-      <span class="savings-value">{{ getSelectedModelLabel() }}</span>
-    </div>
-    <div class="savings-item">
       <span class="savings-label">Tokens saved:</span>
       <span class="savings-value">{{ savedTokens() }}</span>
     </div>
@@ -201,7 +197,7 @@
     </div>
     <div class="savings-item">
       <span class="savings-label">Money saved:</span>
-      <span class="savings-value">${{ savedDollars().toFixed(2) }}</span>
+      <span class="savings-value">${{ formatDollars(savedDollars()) }}</span>
     </div>
   </div>
   @if (showCopiedNotification()) {
