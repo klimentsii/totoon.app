@@ -287,7 +287,7 @@ export class App {
     const selectedModelConfig = this.models.find(m => m.value === modelValue);
     if (selectedModelConfig && !selectedModelConfig.disabled) {
       this.selectedModel.set(modelValue);
-      this.isDropdownOpen.set(false);
+      this.isSettingsOpen.set(false);
     }
   }
 

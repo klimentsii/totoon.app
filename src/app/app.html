@@ -1,46 +1,6 @@
 <div class="converter-container">
   <div class="header">
     <h1>JSON to TOON Converter</h1>
-    <div class="model-selector">
-      <label>Tokenizer Model:</label>
-      <div class="custom-dropdown">
-        <button
-          type="button"
-          class="dropdown-button"
-          (click)="toggleDropdown()"
-          [class.open]="isDropdownOpen()"
-        >
-          <span>{{ getSelectedModelLabel() }}</span>
-          <svg
-            class="dropdown-arrow"
-            [class.open]="isDropdownOpen()"
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M6 9L1 4h10z" fill="#e0e0e0" />
-          </svg>
-        </button>
-        @if (isDropdownOpen()) {
-          <div class="dropdown-menu">
-            @for (model of models; track model.value) {
-              <button
-                type="button"
-                class="dropdown-item"
-                [class.disabled]="model.disabled"
-                [class.selected]="selectedModel() === model.value"
-                [disabled]="model.disabled"
-                (click)="selectModel(model.value)"
-              >
-                {{ model.label }}
-              </button>
-            }
-          </div>
-        }
-      </div>
-    </div>
   </div>
 
   <div class="content">
@@ -119,6 +79,23 @@
               <div class="settings-panel">
                 <h3>Настройки TOON</h3>
                 <div class="settings-row">
+                  <div class="setting-group">
+                    <label>Tokenizer Model:</label>
+                    <div class="setting-options">
+                      @for (model of models; track model.value) {
+                        <button
+                          type="button"
+                          class="setting-btn"
+                          [class.active]="selectedModel() === model.value"
+                          [class.disabled]="model.disabled"
+                          [disabled]="model.disabled"
+                          (click)="selectModel(model.value)"
+                        >
+                          {{ model.label }}
+                        </button>
+                      }
+                    </div>
+                  </div>
                   <div class="setting-group">
                     <label>Indent:</label>
                     <div class="setting-options">
@@ -206,6 +183,10 @@
     </div>
   </div>
   <div class="savings-info">
+    <div class="savings-item">
+      <span class="savings-label">Model:</span>
+      <span class="savings-value">{{ getSelectedModelLabel() }}</span>
+    </div>
     <div class="savings-item">
       <span class="savings-label">Tokens saved:</span>
       <span class="savings-value">{{ savedTokens() }}</span>

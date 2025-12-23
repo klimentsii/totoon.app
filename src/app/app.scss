@@ -19,6 +19,7 @@
     font-size: 2rem;
     margin: 0;
     font-weight: 600;
+    margin-bottom: 32px;
   }
 }
 
@@ -345,7 +346,8 @@ label.btn {
 
     .setting-group {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      flex-direction: column;
       gap: 0.75rem;
 
       label {
@@ -358,6 +360,7 @@ label.btn {
       .setting-options {
         display: flex;
         gap: 0.5rem;
+        flex-wrap: wrap;
       }
     }
 
@@ -374,7 +377,7 @@ label.btn {
       font-family: inherit;
       min-width: 60px;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background-color: #222222;
         border-color: #555;
       }
@@ -383,6 +386,12 @@ label.btn {
         background-color: #4a9eff;
         border-color: #4a9eff;
         color: #ffffff;
+      }
+
+      &:disabled {
+        color: #666;
+        cursor: not-allowed;
+        opacity: 0.6;
       }
     }
   }
